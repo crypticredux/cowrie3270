@@ -167,7 +167,7 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
                     break
 
         txt = os.path.normpath(
-            "{}/txtcmds/{}".format(CowrieConfig.get("honeypot", "share_path"), path)
+            "{}/txtcmds/{}".format(CowrieConfig.get("honeypot", "data_path"), path)
         )
         if os.path.exists(txt) and os.path.isfile(txt):
             return self.txtcmd(txt)
@@ -190,6 +190,8 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
             self.cmdstack[-1].lineReceived(string)
         else:
             log.msg(f"discarding input {string}")
+            stat = failure.Failure(error.ProcessDone(status=""))
+            self.terminal.transport.processEnded(stat)
 
     def call_command(self, pp, cmd, *args):
         self.pp = pp

@@ -3,7 +3,7 @@
 # `runtime` is stripped down.
 
 ARG ARCH=
-ARG BUILD_DATE
+ARG SOURCE_DATE_EPOCH
 ARG TAG
 FROM ${ARCH}debian:bookworm-slim AS builder
 
@@ -30,17 +30,17 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     apt-get -q install -y \
         -o APT::Install-Suggests=false \
         -o APT::Install-Recommends=false \
-      python3-pip \
-      ca-certificates \
-      libffi-dev \
-      libssl-dev \
-      python3-dev \
-      python3-venv \
-      python3 \
-      rustc \
-      cargo \
       build-essential \
-      libsnappy-dev && \
+      ca-certificates \
+      cargo \
+      libffi-dev \
+      libsnappy-dev \
+      libssl-dev \
+      python3 \
+      python3-dev \
+      python3-pip \
+      python3-venv \
+      rustc && \
     rm -rf /var/lib/apt/lists/*
 
 USER ${COWRIE_USER}
@@ -52,7 +52,7 @@ COPY --chown=${COWRIE_USER}:${COWRIE_GROUP} requirements.txt requirements-output
 
 RUN python3 -m venv cowrie-env && \
     . cowrie-env/bin/activate && \
-    pip install --no-cache-dir --upgrade pip wheel setuptools && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --upgrade cffi && \
     pip install --no-cache-dir --upgrade -r ${COWRIE_HOME}/cowrie-git/requirements.txt && \
     pip install --no-cache-dir --upgrade -r ${COWRIE_HOME}/cowrie-git/requirements-output.txt
@@ -63,7 +63,6 @@ COPY --chown=${COWRIE_USER}:${COWRIE_GROUP} . ${COWRIE_HOME}/cowrie-git
 FROM gcr.io/distroless/python3-debian12 AS runtime
 #FROM gcr.io/distroless/python3-debian12:debug AS runtime
 
-LABEL org.opencontainers.image.created=${BUILD_DATE}
 LABEL org.opencontainers.image.authors="Michel Oosterhof <michel@oosterhof.net>"
 LABEL org.opencontainers.image.url="https://cowrie.org/"
 LABEL org.opencontainers.image.documentation="https://cowrie.readthedocs.io"
@@ -103,7 +102,7 @@ COPY --from=builder --chown=0:0 /etc/group /etc/group
 
 COPY --from=builder --chown=${COWRIE_USER}:${COWRIE_GROUP} ${COWRIE_HOME} ${COWRIE_HOME}
 
-RUN [ "python3", "-m", "compileall", "${COWRIE_HOME}", "/usr/lib/python3.11" ]
+RUN [ "python3", "-m", "compileall", "-q", "/cowrie/cowrie-git/src", "/cowrie/cowrie-env/", "/usr/lib/python3.11"]
 
 VOLUME [ "/cowrie/cowrie-git/var", "/cowrie/cowrie-git/etc" ]
 
@@ -113,6 +112,8 @@ WORKDIR ${COWRIE_HOME}/cowrie-git
 ENV PATH=${COWRIE_HOME}/cowrie-env/bin:${PATH}
 ENV PYTHONPATH=${COWRIE_HOME}/cowrie-git/src
 ENV PYTHONUNBUFFERED=1
+
+RUN [ "python3", "/cowrie/cowrie-git/bin/regen-dropin.cache" ]
 
 ENTRYPOINT [ "/cowrie/cowrie-env/bin/python3" ]
 CMD [ "/cowrie/cowrie-env/bin/twistd", "-n", "--umask=0022", "--pidfile=", "cowrie" ]

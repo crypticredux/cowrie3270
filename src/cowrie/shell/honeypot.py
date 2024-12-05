@@ -32,6 +32,8 @@ class HoneyPotShell:
             self.environ["COLUMNS"] = str(protocol.user.windowSize[1])
             self.environ["LINES"] = str(protocol.user.windowSize[0])
         self.lexer: shlex.shlex | None = None
+
+        # this is the first prompt after starting
         self.showPrompt()
 
     def lineReceived(self, line: str) -> None:
@@ -109,8 +111,10 @@ class HoneyPotShell:
                 return
 
         if self.cmdpending:
+            # if we have a complete command, go and run it
             self.runCommand()
         else:
+            # if there's no command, display a prompt again
             self.showPrompt()
 
     def do_command_substitution(self, start_tok: str) -> str:
@@ -148,10 +152,12 @@ class HoneyPotShell:
                 closing_count += 1
                 if opening_count == closing_count:
                     if cmd_expr[0] == "(":
-                        # return the command in () without executing it
-                        result = cmd_expr[1:pos]
+                        # execute the command in () and print to user
+                        self.protocol.terminal.write(
+                            self.run_subshell_command(cmd_expr[: pos + 1]).encode()
+                        )
                     else:
-                        # execute the command in $() or `` or () and return the output
+                        # execute the command in $() or `` and return the output
                         result += self.run_subshell_command(cmd_expr[: pos + 1])
 
                     # check whether there are more command substitutions remaining
@@ -194,10 +200,17 @@ class HoneyPotShell:
         )
         # call lineReceived method that indicates that we have some commands to parse
         self.protocol.cmdstack[-1].lineReceived(cmd)
-        # remove the shell
+        # and remove the shell
         res = self.protocol.cmdstack.pop()
+
         try:
-            output: str = res.protocol.pp.redirected_data.decode()[:-1]
+            output: str
+            if cmd_expr.startswith("("):
+                output = res.protocol.pp.redirected_data.decode()
+            else:
+                # trailing newlines are stripped for command substitution
+                output = res.protocol.pp.redirected_data.decode().rstrip("\n")
+
         except AttributeError:
             return ""
         else:
