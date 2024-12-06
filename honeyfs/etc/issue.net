@@ -1,0 +1,22 @@
+ z/OS V1R13 PUT Level 1209                          IP Address = localhost
+                                                    VTAM Terminal =
+
+                        Application Developer System
+
+                                 //  OOOOOOO   SSSSS
+                                //  OO    OO SS
+                        zzzzzz //  OO    OO SS
+                          zz  //  OO    OO SSSS
+                        zz   //  OO    OO      SS
+                      zz    //  OO    OO      SS
+                    zzzzzz //   OOOOOOO  SSSS
+
+
+                    System Customization - ADCD.Z113H.*
+
+
+
+
+===> Enter "LOGON" followed by the TSO userid. Example "LOGON IBMUSER" or
+===> Enter L followed by the APPLID
+===> Examples: "L TSO", "L CICSTS41", "L CICSTS42", "L IMS11", "L IMS12"
