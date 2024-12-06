@@ -17,6 +17,4 @@
 
 
 
-===> Enter "LOGON" followed by the TSO userid. Example "LOGON IBMUSER" or
-===> Enter L followed by the APPLID
-===> Examples: "L TSO", "L CICSTS41", "L CICSTS42", "L IMS11", "L IMS12"
+===> Enter the TSO userid. Example "LOGON root"
